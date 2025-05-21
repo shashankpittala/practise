@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/crypto http://www.mulesoft.org/schema/mule/crypto/current/mule-crypto.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="d8469157-33e4-4ea0-8b86-961d1306fdfc" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database_Config" doc:id="36f7184f-5e71-4461-b6bf-2903b5e734d0" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="hibernet_3" />
+	</db:config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="d175d970-e489-4907-85ed-61e95b550ed5" />
+	<configuration-properties doc:name="Configuration properties" doc:id="d2fe41f4-4099-4710-b616-57ec62d6f74e" file="config.properties" />
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="2a70ac03-99b0-4533-a20d-1d909944db8a" />
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="9d44d745-fb00-4b43-b467-726d67955977" >
+		<email:smtp-connection />
+	</email:smtp-config>
+	<flow name="databseFlow" doc:id="5248ac2e-ce7b-4ea3-9fd2-857b3858748d" >
+		<http:listener doc:name="Listener" doc:id="728b8491-8019-418c-93dd-15c17cc4d71a" config-ref="HTTP_Listener_config" path="/select"/>
+		<db:select doc:name="Select" doc:id="0b3ed370-009d-4eb0-af50-07bfe9ac6877" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM servlet_crud.User;]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="d7612b55-e763-43c0-930e-dfc6bc637341" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="0ec079d4-aad8-4994-97fc-7a5bb8e420c9" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="96bbdf69-0123-4573-9816-f2214281d17d">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xlsx
+---
+{
+	Sheet1: payload map ( payload01 , indexOfPayload01 ) -> payload01
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="Write" doc:id="31e4e8db-e8a7-4112-8d2d-727b1331d7e5" path="/Users/shashankpittala/Documents/MuleSoft/table copy.csv"/>
+	</flow>
+	<flow name="databseFlow2" doc:id="1bdf6640-2dcd-4885-ac23-9608b45ab29d" >
+		<http:listener doc:name="Listener" doc:id="9effde12-df65-4f7c-b912-e85ea33d2fe4" config-ref="HTTP_Listener_config" path="/insert"/>
+		<validation:is-not-blank-string doc:name="Is not blank string" doc:id="01b00874-8538-431b-b508-e0871c332cd6" config-ref="Validation_Config" message="is not blank "/>
+		<ee:transform doc:name="Transform Message" doc:id="cb6e2330-9607-4736-857b-c7af43975a61" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="databseFlow1" doc:id="fc186134-f520-4dc3-ac70-08b886e8f0dd" >
+		<http:listener doc:name="Listener" doc:id="b0f2561a-a7a6-491a-9c59-d5c40c30baf4" config-ref="HTTP_Listener_config" path="/select2"/>
+		<db:select doc:name="Select" doc:id="da64c010-6b65-45f0-b9da-baadeab042cc" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM servlet_crud.User;]]></db:sql>
+		</db:select>
+		<logger level="INFO" doc:name="Logger" doc:id="50f6b27c-1f5b-4904-9901-d0b730077df8" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="8907f1e1-a8e9-481b-b234-48382fd6c6c6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="Write" doc:id="cf3ab44a-523a-4e97-8ff2-d5757f1697b3" config-ref="File_Config" path="/Users/shashankpittala/Documents/MuleSoft/test.csv"/>
+	</flow>
+	<flow name="databseFlow4" doc:id="f1c04d40-8f61-4c02-995b-31bbc607bad5" >
+		<http:listener doc:name="Listener" doc:id="ecd7dd6a-a522-4efa-bbfe-02fc5f612908" config-ref="HTTP_Listener_config" path="/delete"/>
+		<db:delete doc:name="Delete" doc:id="6785406f-a07c-4f38-92b5-cb67d1219bc4" config-ref="Database_Config">
+			<db:sql ><![CDATA[delete from Shoe where shoeId=:id;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"id":payload.sravanthi
+	}]]]></db:input-parameters>
+		</db:delete>
+	</flow>
+	<flow name="databseFlow3" doc:id="b581ce6a-4961-4584-899f-2a49ddfcf9c0" >
+		<http:listener doc:name="Listener" doc:id="68dd6d94-418a-42bb-b0c7-5a4f88c824f3" config-ref="HTTP_Listener_config" path="/update"/>
+		<db:update doc:name="Update" doc:id="e69217b0-8510-4065-95a7-56fb600782e5" config-ref="Database_Config">
+			<db:sql ><![CDATA[update Shoe set brand=:brand where shoeId=:shoeId;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"brand":"superdry",
+	"shoeId":3
+}]]]></db:input-parameters>
+		</db:update>
+	</flow>
+	<flow name="databseFlow5" doc:id="f105ebe4-2c42-49fb-b641-aad6e864e38c" >
+		<http:listener doc:name="Listener" doc:id="d7d3071a-5e74-4030-8691-df407400a19d" config-ref="HTTP_Listener_config" path="/var"/>
+		<set-variable value="5" doc:name="Set Variable" doc:id="b0ae452f-f005-4b1d-8436-fa823e84eaa7" variableName="var"/>
+		<set-payload value='#["Shashank"]' doc:name="Set Payload" doc:id="cee34b80-8065-4171-b81d-21c41270f008" />
+		<logger level="INFO" doc:name="Logger" doc:id="6b92f3e5-4dfb-4c1d-bc23-23a76e815834" message="#[payload]"/>
+	</flow>
+</mule>
