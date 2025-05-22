@@ -39,7 +39,7 @@
 <applicationName>${appname}</applicationName >
 <businessGroup>${business}</businessGroup>
 <workerType>${vCore}</workerType>
-<workers>$ workers,</workers>
+<workers>${workers}</workers>
 <objectStoreV2>trué</objectStoreV2>
 </cloudHubDeployment>
 					<sharedLibraries>
